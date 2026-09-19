@@ -1,0 +1,50 @@
+# This repo's only Ruby files are Homebrew Formula DSL files (Formula/*.rb), which
+# have their own well-established style conventions enforced by Homebrew's own
+# tooling ('brew style' / 'brew audit --strict') -- double-quoted strings, no
+# frozen_string_literal pragma, Pathname#/ used for path-joining (not division), and
+# other conventions that intentionally differ from general-purpose Ruby style.
+#
+# The global pre-commit hook invokes 'rubocop' with explicit file arguments, which
+# bypasses 'AllCops: Exclude' entirely (a documented RuboCop behavior -- Exclude only
+# applies during auto-discovery, not to files named explicitly on the command line).
+# So instead of excluding Formula/*.rb, the specific cops that conflict with real
+# Homebrew formula conventions are disabled/reconfigured below; 'brew style'/
+# 'brew audit' remain the authoritative linters for everything these cops would
+# otherwise flag.
+AllCops:
+  NewCops: enable
+
+# Formula filenames must exactly match the installable package name
+# ('git-remote-gpg-encrypt', kebab-case) -- that's how 'brew install
+# git-remote-gpg-encrypt' resolves to this file. Not negotiable, unlike a generic
+# Ruby script's file naming.
+Naming/FileName:
+  Enabled: false
+
+# Homebrew formulas use double-quoted strings throughout (see any formula in
+# homebrew-core) -- the opposite of the single-quote convention used elsewhere.
+Style/StringLiterals:
+  EnforcedStyle: double_quotes
+
+# Homebrew formula files don't carry a top-level class-doc comment or a
+# frozen_string_literal pragma -- neither is part of Homebrew's own style guide.
+Style/Documentation:
+  Enabled: false
+Style/FrozenStringLiteralComment:
+  Enabled: false
+
+# 'libexec/"bin/..."' is Pathname#/ (path-joining), not division -- the generic
+# operator-spacing cop can't distinguish the two and misflags this idiomatic
+# Homebrew path-joining style as a missing-space-around-division-operator issue.
+Layout/SpaceAroundOperators:
+  Enabled: false
+
+# Multi-line 'url' hash arguments (tag:/revision:) follow Homebrew's own established
+# formula style; not worth fighting over alignment here.
+Layout/HashAlignment:
+  Enabled: false
+
+# Formula #install methods legitimately do several small, unrelated setup steps;
+# Homebrew's own style guide has no equivalent complexity ceiling.
+Metrics/AbcSize:
+  Enabled: false

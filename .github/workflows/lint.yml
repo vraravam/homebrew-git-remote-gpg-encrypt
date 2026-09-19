@@ -1,0 +1,54 @@
+name: Lint
+
+# Baseline correctness checks for every push (any branch) and every PR: 'brew style'
+# (RuboCop wrapper with Homebrew's own style config), 'brew audit --strict' against
+# every formula/cask in this tap, and a real 'brew install' + 'brew test' to catch
+# install-time regressions (e.g. a wrong 'url'/'tag'/'revision', a broken 'install'
+# block) that style/audit alone wouldn't catch. Runs on macos-latest, which ships
+# Homebrew preinstalled.
+#
+# 'brew audit'/'brew style' only accept a tap/formula *name*, not a bare file path --
+# the checked-out workspace is symlinked into the exact path Homebrew expects for
+# this tap (computed via 'brew --repository vraravam/tap') so those commands resolve
+# against the code being tested, not whatever happened to already be tapped on the
+# runner (nothing, on a fresh runner).
+
+on:
+  push:
+    paths-ignore:
+      - '**/*.md'
+      - 'LICENSE'
+  pull_request:
+    paths-ignore:
+      - '**/*.md'
+      - 'LICENSE'
+
+jobs:
+  formula:
+    name: brew style / audit / install / test
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Symlink checkout into place as this tap
+        run: |
+          set -euo pipefail
+          tap_dir="$(brew --repository vraravam/tap)"
+          rm -rf "${tap_dir}"
+          mkdir -p "$(dirname "${tap_dir}")"
+          ln -s "${GITHUB_WORKSPACE}" "${tap_dir}"
+
+      - name: brew style
+        run: brew style vraravam/tap
+
+      - name: brew audit --strict
+        run: brew audit --strict --tap=vraravam/tap
+
+      - name: Install and test every formula in this tap
+        run: |
+          set -euo pipefail
+          for formula in Formula/*.rb; do
+            name="$(basename "${formula}" .rb)"
+            brew install "vraravam/tap/${name}"
+            brew test "vraravam/tap/${name}"
+          done

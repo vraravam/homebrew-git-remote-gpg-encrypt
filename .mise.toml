@@ -1,0 +1,11 @@
+# mise configuration for homebrew-tap
+#
+# This tap's only Ruby file (Formula/git-remote-gpg-encrypt.rb) is actually executed
+# by Homebrew's own vendored Ruby whenever 'brew style'/'brew audit'/'brew install'
+# runs it -- never by a bare 'ruby' invocation. Disabling mise's ruby tool here isn't
+# about vanilla-OS bootstrap (unlike the sibling git-remote-gpg-encrypt repo's own
+# .mise.toml) -- it's so that manually running 'rubocop'/'ruby -c' against the formula
+# file while editing it (outside of 'brew style') resolves to the same system Ruby
+# used throughout this developer's other Ruby projects, for consistency.
+[settings]
+disable_tools = ["ruby"]
